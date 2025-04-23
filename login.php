@@ -19,7 +19,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $row = $result->fetch_assoc();
 
         if (password_verify($password_input, $row["password"])) {
-            $_SESSION["user"] = $row["fullname"];
+            $_SESSION["user_id"] = $row["id"]; // used in dashboard.php
+            $_SESSION["user_name"] = $row["fullname"]; // optional, in case you want to show the name
+
             header("Location: dashboard.php");
             exit();
         } else {
