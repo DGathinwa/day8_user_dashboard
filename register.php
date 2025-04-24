@@ -1,49 +1,49 @@
 <?php
+session_start();
 require 'config.php';
 
+$message = "";
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Create database if not exists
-$conn->query("CREATE DATABASE IF NOT EXISTS $dbname");
-
-// Select the database
-$conn->select_db($dbname);
-
-// Create users table if not exists
-$conn->query("CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    fullname VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)");
-
-// Handle form submission
+// Registration Logic
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $fullname = $conn->real_escape_string($_POST["fullname"]);
-    $email = $conn->real_escape_string($_POST["email"]);
-    $password = password_hash($_POST["password"], PASSWORD_DEFAULT);
+    $fullname = $_POST["fullname"];
+    $email = $_POST["email"];
+    $password = $_POST["password"];
+    $confirm_password = $_POST["confirm_password"];
 
-    $stmt = $conn->prepare("INSERT INTO users (fullname, email, password) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $fullname, $email, $password);
-
-    if ($stmt->execute()) {
-        echo "✅ Registration successful!";
+    // Check if passwords match
+    if ($password !== $confirm_password) {
+        $message = "❌ Passwords do not match.";
     } else {
-        echo "❌ Error: " . $stmt->error;
-    }
+        // Hash the password for secure storage
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    $stmt->close();
+        // Check if the email already exists in the database
+        $sql = "SELECT * FROM users WHERE email = '$email'";
+        $result = $conn->query($sql);
+
+        if ($result->num_rows > 0) {
+            $message = "❌ Email already exists.";
+        } else {
+            // Insert new user into the database
+            $sql = "INSERT INTO users (fullname, email, password) VALUES ('$fullname', '$email', '$hashed_password')";
+
+            if ($conn->query($sql) === TRUE) {
+                $_SESSION["user_id"] = $conn->insert_id; // Set session user ID
+                $_SESSION["user_name"] = $fullname; // Optional: Set the session name for user
+
+                header("Location: dashboard.php");
+                exit();
+            } else {
+                $message = "❌ Error: " . $conn->error;
+            }
+        }
+    }
 }
 
 $conn->close();
 ?>
 
-<!-- 📝 Registration form starts here -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -51,14 +51,27 @@ $conn->close();
 </head>
 <body>
     <h2>Register</h2>
+
+    <?php if (!empty($message)): ?>
+        <p><?php echo $message; ?></p>
+    <?php endif; ?>
+
     <form method="POST" action="">
-        <input type="text" name="fullname" placeholder="Full Name" required><br><br>
-        <input type="email" name="email" placeholder="Email Address" required><br><br>
-        <input type="password" name="password" placeholder="Password" required><br><br>
+        <label>Full Name:</label><br>
+        <input type="text" name="fullname" required><br><br>
+
+        <label>Email:</label><br>
+        <input type="email" name="email" required><br><br>
+
+        <label>Password:</label><br>
+        <input type="password" name="password" required><br><br>
+
+        <label>Confirm Password:</label><br>
+        <input type="password" name="confirm_password" required><br><br>
+
         <button type="submit">Register</button>
     </form>
 
-    <!-- 👇 Login link here -->
-    <p>Already have an account? <a href="login.php">Login here</a></p>
+    <p>Already have an account? <a href="login.php">Login here</a>.</p>
 </body>
 </html>
