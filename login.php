@@ -12,15 +12,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $conn->real_escape_string($_POST["email"]);
     $password_input = $_POST["password"];
 
+    // Fetch user by email
     $sql = "SELECT * FROM users WHERE email = '$email'";
     $result = $conn->query($sql);
 
     if ($result->num_rows === 1) {
         $row = $result->fetch_assoc();
 
+        // Verify password
         if (password_verify($password_input, $row["password"])) {
-            $_SESSION["user_id"] = $row["id"]; // used in dashboard.php
-            $_SESSION["user_name"] = $row["fullname"]; // optional, in case you want to show the name
+            // Store values in session
+            $_SESSION["user_id"] = $row["id"];
+            $_SESSION["user_name"] = $row["fullname"];
+            $_SESSION["user_role"] = strtolower($row["role"]); // normalize role (e.g., 'Admin' to 'admin')
 
             header("Location: dashboard.php");
             exit();
@@ -44,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <h2>User Login</h2>
 
     <?php if (!empty($message)): ?>
-        <p><?php echo $message; ?></p>
+        <p style="color:red;"><?php echo $message; ?></p>
     <?php endif; ?>
 
     <form method="POST" action="">

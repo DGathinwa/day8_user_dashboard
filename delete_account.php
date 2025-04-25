@@ -2,31 +2,23 @@
 session_start();
 require 'config.php';
 
-if (!isset($_SESSION["user"])) {
+if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit();
 }
 
-$current_user = $_SESSION["user"];
+$user_id = $_SESSION["user_id"];
 
-// Find user ID
-$userQuery = $conn->query("SELECT id FROM users WHERE fullname = '$current_user'");
-if ($userQuery->num_rows !== 1) {
-    echo "❌ Error: User not found.";
-    exit();
-}
+$sql = "DELETE FROM users WHERE id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $user_id);
 
-$userId = $userQuery->fetch_assoc()["id"];
-
-// Delete the user
-$delete = $conn->query("DELETE FROM users WHERE id = $userId");
-
-if ($delete) {
+if ($stmt->execute()) {
+    // Clear session
     session_destroy();
-    echo "🧹 Your account has been deleted. <a href='register.php'>Register again</a> or <a href='login.php'>Login</a>.";
+    header("Location: login.php?msg=Account+Deleted");
+    exit();
 } else {
-    echo "❌ Failed to delete account. Please try again.";
+    echo "❌ Error deleting account: " . $conn->error;
 }
-
-$conn->close();
 ?>
