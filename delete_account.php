@@ -9,12 +9,14 @@ if (!isset($_SESSION["user_id"])) {
 
 $user_id = $_SESSION["user_id"];
 
+logAction($user_id, "Deleted their account");
+
 $sql = "DELETE FROM users WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 
 if ($stmt->execute()) {
-    // Clear session
+    session_unset();
     session_destroy();
     header("Location: login.php?msg=Account+Deleted");
     exit();

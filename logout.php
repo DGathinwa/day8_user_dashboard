@@ -1,13 +1,14 @@
 <?php
 session_start();
+require 'config.php';
 
-// Unset all session variables
-$_SESSION = array();
+if (isset($_SESSION["user_id"])) {
+    logAction($_SESSION["user_id"], "Logged out");
+}
 
-// Destroy the session
+session_unset();
 session_destroy();
 
-// Redirect to login page
 header("Location: login.php");
 exit();
 ?>

@@ -7,24 +7,25 @@ ini_set('display_errors', 1);
 
 $message = "";
 
-// Login Logic
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $conn->real_escape_string($_POST["email"]);
     $password_input = $_POST["password"];
 
-    // Fetch user by email
-    $sql = "SELECT * FROM users WHERE email = '$email'";
-    $result = $conn->query($sql);
+    $sql = "SELECT * FROM users WHERE email = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
         $row = $result->fetch_assoc();
 
-        // Verify password
         if (password_verify($password_input, $row["password"])) {
-            // Store values in session
             $_SESSION["user_id"] = $row["id"];
             $_SESSION["user_name"] = $row["fullname"];
-            $_SESSION["user_role"] = strtolower($row["role"]); // normalize role (e.g., 'Admin' to 'admin')
+            $_SESSION["user_role"] = strtolower($row["role"]);
+
+            logAction($row["id"], "Logged in");
 
             header("Location: dashboard.php");
             exit();
@@ -34,8 +35,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $message = "❌ No user found with that email.";
     }
-
-    $conn->close();
 }
 ?>
 
@@ -51,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <p style="color:red;"><?php echo $message; ?></p>
     <?php endif; ?>
 
-    <form method="POST" action="">
+    <form method="POST">
         <label>Email:</label><br>
         <input type="email" name="email" required><br><br>
 

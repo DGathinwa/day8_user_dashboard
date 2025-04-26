@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// Only allow admin access
 if (!isset($_SESSION["user_id"]) || $_SESSION["user_role"] !== 'admin') {
     header("Location: dashboard.php");
     exit();
@@ -19,6 +18,7 @@ if (!isset($_SESSION["user_id"]) || $_SESSION["user_role"] !== 'admin') {
     <p>You have administrative privileges.</p>
 
     <ul>
+        <li><a href="view_logs.php">📜 View Activity Logs</a></li>
         <li><a href="manage_users.php">👥 Manage Users</a></li>
         <li><a href="site_settings.php">⚙️ Site Settings</a></li>
         <li><a href="dashboard.php">⬅️ Back to Dashboard</a></li>

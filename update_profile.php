@@ -9,23 +9,23 @@ if (!isset($_SESSION["user_id"])) {
 
 $user_id = $_SESSION["user_id"];
 
-// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $fullname = $conn->real_escape_string($_POST["fullname"]);
     $email = $conn->real_escape_string($_POST["email"]);
 
-    $sql = "UPDATE users SET fullname='$fullname', email='$email' WHERE id=$user_id";
+    $sql = "UPDATE users SET fullname=?, email=? WHERE id=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssi", $fullname, $email, $user_id);
 
-    if ($conn->query($sql)) {
+    if ($stmt->execute()) {
+        $_SESSION["user_name"] = $fullname; // update session
+        logAction($user_id, "Updated profile");
         echo "✅ Profile updated successfully.";
-        // Optionally update session name
-        $_SESSION["user"] = $fullname;
     } else {
         echo "❌ Error updating profile: " . $conn->error;
     }
 }
 
-// Fetch current data
 $result = $conn->query("SELECT fullname, email FROM users WHERE id=$user_id");
 $user = $result->fetch_assoc();
 ?>
@@ -37,11 +37,12 @@ $user = $result->fetch_assoc();
 </head>
 <body>
     <h2>Edit Profile</h2>
+
     <form method="POST">
-        <label>Full Name:</label>
+        <label>Full Name:</label><br>
         <input type="text" name="fullname" value="<?php echo htmlspecialchars($user['fullname']); ?>" required><br><br>
 
-        <label>Email:</label>
+        <label>Email:</label><br>
         <input type="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required><br><br>
 
         <button type="submit">Update</button>
